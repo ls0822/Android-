@@ -130,16 +130,28 @@ Fragment 中调用startActivityForResult 效果是一样的。
 
 ### 1.Service启动方式 ###
 - startService
-    
+  通过其他组件启动service，可以独立在后台无限运行（版本不会回收，个别手机除外（小米，华为等））。需要自己调用stopSelf去停止，停止后然后被系统销毁。
 - bindService
+  依附于activity。当activity销毁之后，其也会自动停止，并销毁。bindService一般用于和Service进行数据交互。
+两种方式可以混合使用。
 
 ### 2.生命周期 ###
+   ![](images/service-life.png)
 ### 3.Service通信 ###
+- intent  
+  轻量级数据传给Service 则可以使用startService。把数据放在intent 中，传给Service。 
+  在Service 的 onStartCommand中处理信息。  
+- Messager 
+    底层实现是AIDL。是对AIDL实现的封装。
+    使用方法是，
+    - 在Service里，通过Messager（MessagerHandler）创建Messager 对象，然后通过       messager.getBinder() 方法，在onBinder 方法中返回Binder。MessagerHandler 是用于接收处理对象的。
+    - 在client端： 在用于绑定Service的Connection 对象实现中的 onServiceConnected（ComponentName name， IBinder binder）中，通过取得binder对象，使用Messager的
+    Messager（IBinder） 方法构造出Messager对象。然后就可以通过Messager对象send msg给Service了。消息会传到Service中的Messager的MessagerHandler 中的handlerMessage方法中处理。
     
+    
+
 - AIDL
-- intent
-- handler
-- 
+
 ### 4.IntentService ###
 
 
