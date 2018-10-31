@@ -952,32 +952,12 @@ Android5.0推出的新的动画框架，可以给View做一个揭露效果。
 
 - Parcelable
     其是android所有的，主要用于binder的数据传输。序列化对象存储到了Parcel中。主要是在内存中使用，所以效率比较高。
-    1、序列化功能由writeToParcel来完成，最终是通过Parcel中的一些列write方法来完成的。
-    2、反序列化是由CREATOR来完成，其内部标明了如何创建序列化对象和数组，并通过Parcel的一些列read方法来完成反序列化过程。
-    3、内容描述功能由describeContents方法来完成，几乎在所有情况下这个方法都应该返回0，仅当前对象中存在文件描述符时，此方法返回1。
+    1.序列化功能由writeToParcel来完成，最终是通过Parcel中的一些列write方法来完成的。
+    2.反序列化是由CREATOR来完成，其内部标明了如何创建序列化对象和数组，并通过Parcel的一些列read方法来完成反序列化过程。
+    3.内容描述功能由describeContents方法来完成，几乎在所有情况下这个方法都应该返回0，仅当前对象中存在文件描述符时，此方法返回1。
+    4.android.os.Parcel对象进行的序列化和反序列话。
 
 >总结:如果持久化操作，选择Seriazable。 效率比较低，因为进行了IO操作。如果仅内存中操作，使用Parcelable，效率相对较高。
-
-
-
-
-## 进程间通信方式##
-- Socket
-- 文件
-- 管道
-- localSocket
-- AIDL（Binder）
-- 广播，提供者等。
-
-
-## Buidler机制##
-原理是内存拷贝。比Socket效率高， binder只进行一次拷贝，socket进行两次拷贝。
-
- ![image](images/binder.jpeg)
- 
-服务启动的时候会在ServiceManager中进行注册。客户端首先通过ServiceManager 去查找对应的服务对象（实际为能查找底层Service的代理）。通过这个对象在JNI层找到对应的服务。通过找到的服务向内核态传输数据（即copy进去）并等待回复， 然后通过Binder 驱动 把数据copy给Service，完成后会回一个response。 真正的数据copy是在binder驱动里进行操作的。
-
-
 
 ## Multidex ##
 ### 原因 ###
@@ -1018,7 +998,8 @@ Android5.0推出的新的动画框架，可以给View做一个揭露效果。
     - 使用ProGuard去掉一些未使用的代码
  - 优化配置
  ```java
-在分包前，编译应用程序中的每一个module包括依赖项目，这个步骤称为 pre-dexing。 include每一个dex文件 最重要的是，对于主dex文件，不会做切分。以保证计算速度。
+在分包前，编译应用程序中的每一个module包括依赖项目，这个步骤称为 pre-dexing。 include
+每一个dex文件 最重要的是，对于主dex文件，不会做切分。以保证计算速度。
 productFlavors {
         // Define separate dev and prod product flavors.
         dev {
@@ -1079,14 +1060,12 @@ dependencies {
 5.0以后用于替换dalvik的虚拟机。
 
 ### ART 与 DVM 区别 ###
-
 - DVM中的应用每次运行时，字节码都需要通过即时编译器（JIT，just in time）转换为机器码，这会使得应用的运行效率降低。而在ART中，系统在安装应用时会进行一次预编译（AOT，ahead of time）,将字节码预先编译成机器码并存储在本地，这样应用每次运行时就不需要执行编译了，运行效率也大大提升。
 - DVM 安装快，但启动效率低（因为每次启动都需要转化为机器码）。 ART 安装时间变长了，控件变大了，但是启动快（安装时解释为机器码，后续不需要了）。 
 - ART占用空间比Dalvik大（原生代码占用的存储空间更大，字节码变为机器码之后，可能会增加10%-20%），这也是著名的“空间换时间大法"
 - ART 默认支持dex，因为他是一次性编译长一个opt文件， Dalvik 默认不支持多个Dex， 受65536限制。
 - ART改善的垃圾回收器
 与DVM的GC不同的是，ART的GC类型有多种，主要分为Mark-Sweep GC和Compacting GC。ART的运行时堆的空间根据不同的GC类型也有着不同的划分。
-
 
 ## 引用 ##
 - 强引用
@@ -1113,18 +1092,15 @@ dependencies {
         - 耗时逻辑， 资源加载耗时不要再主线程中做。
         - 避免死锁
 
-
 ##性能优化##
 ### 1.布局优化 ###
-
 - 避免过度绘制 
 view 第一次需要渲染的时候会产生一个对应的DisplayList(Layer).DisplayList交给GPU进行渲染。
 当View渲染后，进行位置操作的等操作的时候只需要执行渲染指令。当View内容发生改变的时候，则需要重新创建DisplayList 然后重新渲染。创建DisplayList的过程就是绘制整个View的过程，效率取决于View的负责程度。
+描述的是屏幕上的某个像素在同一帧的时间内被绘制了多次。在多层次的UI结构里面，如果不可见的UI也在	做绘制的操作，就会导致某些像素区域被绘制了多次，浪费大量的CPU以及GPU资源。（可以通过开发者选	项，打开Show GPU Overdraw的选项，观察UI上的Overdraw情况）。
+![](images/overdraw.png)
 
-	描述的是屏幕上的某个像素在同一帧的时间内被绘制了多次。在多层次的UI结构里面，如果不可见的UI也在	做绘制的操作，就会导致某些像素区域被绘制了多次，浪费大量的CPU以及GPU资源。（可以通过开发者选	项，打开Show GPU Overdraw的选项，观察UI上的Overdraw情况）。
-   ![](images/overdraw.png)
-
-    蓝色、淡绿、淡红，深红代表了4种不同程度的Overdraw的情况，我们的目标就是尽量减少红Overdraw，看到更多的蓝色区域。
+蓝色、淡绿、淡红，深红代表了4种不同程度的Overdraw的情况，我们的目标就是尽量减少红Overdraw，看到更多的蓝色区域。
 
 - 解决：
 
@@ -1506,8 +1482,6 @@ view 第一次需要渲染的时候会产生一个对应的DisplayList(Layer).Di
 
 
 ## 网络 ##
-     
-
 
 ###1.TCP与UDP###
 | 对比项 | TCP  |  UDP  |
@@ -1672,35 +1646,408 @@ HTTP/1.1协议中共定义了八种方法（有时也叫“动作”），来表
 
     - GET请求请提交的数据放置在HTTP请求协议头中，而POST提交的数据则放在实体数据中；GET方式提交的数据最多只能有1024字节，而POST则没有此限制。 
 
+
+## Buidler机制##
+原理是内存拷贝。比Socket效率高， binder只进行一次拷贝，socket进行两次拷贝。
+
+ ![image](images/binder.jpeg)
+ 
+服务启动的时候会在ServiceManager中进行注册。客户端首先通过ServiceManager 去查找对应的服务对象（实际为能查找底层Service的代理）。通过这个对象在JNI层找到对应的服务。通过找到的服务向内核态传输数据（即copy进去）并等待回复， 然后通过Binder 驱动 把数据copy给Service，完成后会回一个response。 真正的数据copy是在binder驱动里进行操作的。
+
+
+## 多进程开发 ##
+### 1.进程 ###
+
+- 进程是系统资源和分配的基本单位，而线程是调度的基本单位。
+- 每个进程都有自己独立的资源和内存空间
+- 其它进程不能任意访问当前进程的内存和资源
+- 系统给每个进程分配的内存会有限制
+
+### 2.进程等级 ###
+优先级是由上往下，由高变低。优先级低的优先被回收。
+- Foreground process(前台进程)
+该进程包含正在与用户进行交互的界面组件，比如一个Activity。在接收关键生命周期方法时会让一个进程临时提升为前台进程，包括任何服务的生命周期方法onCreate()和onDestroy()和任何广播接收器onReceive()方法。这样做确保了这些组件的操作是有效的原子操作，每个组件都能执行完成而不被杀掉
+
+- Visible process(可见进程)
+该进程中的组件虽然没有和用户交互，但是仍然可以被看到。activity可见的时候不一定在前台。一个简单的例子是前台的 activity 使用对话框启动了一个新的 activity 或者一个透明 activity 。另一个例子是当调用运行时权限对话框时（事实上它就是一个 activity！）。
+Service通过setFroground 优先级可以提升为此等级。
+
+- Service process(服务进程)
+该进程包含在执行后台操作的服务组件，比如播放音乐的Service。对于许多在后台做处理（如加载数据）而没有立即成为前台服务的应用都属于这种情况。
+请特别注意从onStartCommand()返回的常量，如果服务由于内存压力被杀掉，它表示控制什么发生什么：
+    - START_STICKY表示希望系统可用的时候自动重启服务，但不关心是否能获得最后一次的 Intent （例如，可以重建自己的状态或者控制自己的 start/stop 生命周期）。
+    - START_REDELIVER_INTENT是为那些在被杀死之后重启时重新获得 Intent 的服务的，直到用传递给 onStartCommand() 方法的 startId 参数调用stopSelf()为止。这里会使用 Intent 和 startId 作为队列完成工作。
+    - START_NOT_STICKY用于那些杀掉也没关系的服务。这适合那些管理周期性任务的服务，它们只是等待下一个时间窗口工作。
+- Background process(后台进程)
+该进程包含的组件没有与用户交互，用户也看不到 Service。在一般操作场景下，设备上的许多内存就是用在这上面的，使可以重新回到之前打开过的某个 activity 。
+- Empty process(空进程)
+Android 需要可以随时杀掉它
+
+### 2.多进程使用场景 ###
+- 分担主进程的压力
+   - 因为每个进程的内存分配是有限的。并且系统首先会回收清理内存占用大的。 
+   - 避免被回收  
+- 常驻后台，做耗时操作等
+
+### 3. 多进程创建 ###
+- 私有进程
+  通过android：process = ":xxx";添加目号xx就是私有进程。    
+  注意：其他应用的组件不能和他跑在同一个进程  
+- 全局进程
+ 通过android：process = "xxxxxx"为全局进程；
+ 可以通过ShareUID 跑在同一进程，相同的ShareUID 和相同的签名可以访问私有数据
+ > 问题: 什么事跑在同一个进程?? 不同应该用进程号相同? 一个应用intent调起另一个应用的组件呢?
+
+### 4.问题 ###
+- 静态成员和单例模式完全失效
+- 线程同步机制完全失效
+内存不一样了无法保证对象一样。
+- SP 可靠性降低
+sp线程不安全的， 不支持两个进程同时写操作，有几率丢失数据。底层是对鞋xml文件实现的。（可以再一个进程中读写）。
+- Application 创建多次,进程号不一样的
+通过判断不同的进程id获得进程的名，来进行不同的处理。（android.os.Process.myPid()）
+```java
+public static String getProcessName(Context cxt, int pid) {
+		ActivityManager am = (ActivityManager) cxt.getSystemService(Context.ACTIVITY_SERVICE);
+		List<ActivityManager.RunningAppProcessInfo> runningApps = am.getRunningAppProcesses();
+		if (runningApps == null) {
+			return null;
+		}
+		for (ActivityManager.RunningAppProcessInfo procInfo : runningApps) {
+			if (procInfo.pid == pid) {
+				return procInfo.processName;
+			}
+		}
+		return null;
+	}
+```
+ 
+### 5.查看线程命令 ###
+adb shell ps
+
+### 6.进程通信 ###
+- Socket 
+两次拷贝
+- 文件
+- 内存
+- 管道
+- localSocket
+需要相同的serverId，内存拷贝。
+- 广播，提供者等。
+- AIDL（Binder）
+  - 支持的数据类型
+    - 基本类型 int long boolean double
+    - String CharSwquence
+    - List 只支持ArrayList 元素需支持AIDL
+    - 只支持HashMap，key、value 元素需支持AIDL
+    - Parcelable
+    - AIDL 接口
+  - 自定义的Parcelable 对象和AIDL对象必须是import尽来的
+  - 除了基本类型 参数上方必须标上in out 或 inout
+  - 只支持方法，不支持静态常量
+  - >注意: 有可能多个客户端在不同线程通连接服务,所以要注意好线程同步问题.
+  - ADIL接口接口注销问题。因为客户端传过去的对象都经过序列化重新生成对象了。所以要使用RemoteCallbackList。原理是binder为key，查找listener。
+  - Binder 意外死亡；1） 设置DeathRecipient监听，2） 在onServiceDisconnected 重启。
+  - 在onServiceDisconnected， onServiceConnected 是主线程方法
+  - 安全验证
+    - 自定义配置权限
+    - 包名，指纹验证通过， getCallingUid getCallingPid
+    - 在服务端onTransact中验证，验证失败返回false。
+    - parcelable类生命包名 在客户端的包名要一致
+  - AIDL 生成的代码解析
+  
+    ```java
+        /*
+         * This file is auto-generated.  DO NOT MODIFY.
+         * Original file: F:\\cutecommCode\\B2B\\android-service\\src\\com
+         * \\cutecomm\\cloudcc\\service\\remotecontrol\\IRemoteControlService.aidl
+         */
+        package com.cutecomm.cloudcc.service.remotecontrol;
+        
+        public interface IRemoteControlService extends android.os.IInterface {
+        	/** Local-side IPC implementation stub class. */
+        	public static abstract class Stub extends android.os.Binder
+        		implements com.cutecomm.cloudcc.service
+                    .remotecontrol.IRemoteControlService {
+        		private static final java.lang.String DESCRIPTOR = 
+                   "com.cutecomm.cloudcc.service.remotecontrol.IRemoteControlService";
+        
+        		/** Construct the stub at attach it to the interface. */
+        		public Stub() {
+        			this.attachInterface(this, DESCRIPTOR);
+        		}
+        
+        		/**
+        		 * Cast an IBinder object into an
+        		 * com.cutecomm.cloudcc.service.remotecontrol.IRemoteControlService
+        		 * interface, generating a proxy if needed.
+        		 */
+        		public static com.cutecomm.cloudcc.service.remotecontrol.IRemoteControlService asInterface(
+        				android.os.IBinder obj) {
+        			if ((obj == null)) {
+        				return null;
+        			}
+        			android.os.IInterface iin = obj.queryLocalInterface(DESCRIPTOR);
+        			if (((iin != null) && (iin instanceof com.cutecomm
+                        .cloudcc.service.remotecontrol.IRemoteControlService))) {
+        				return ((com.cutecomm.cloudcc.service.remotecontrol.IRemoteControlService) iin);
+        			}
+        			return new com.cutecomm.cloudcc.service.remotecontrol.IRemoteControlService.Stub.Proxy(obj);
+        		}
+        
+        		@Override
+        		public android.os.IBinder asBinder() {
+        			return this;
+        		}
+        
+        		@Override
+        		public boolean onTransact(int code, android.os.Parcel data, android.os.Parcel reply, int flags)
+        				throws android.os.RemoteException {
+        			java.lang.String descriptor = DESCRIPTOR;
+        			switch (code) {
+        			case INTERFACE_TRANSACTION: {
+        				reply.writeString(descriptor);
+        				return true;
+        			}
+        			case TRANSACTION_startDesktopShared: {
+        				data.enforceInterface(descriptor);
+        				this.startDesktopShared();
+        				reply.writeNoException();
+        				return true;
+        			}
+        			
+        			default: {
+        				return super.onTransact(code, data, reply, flags);
+        			}
+        			}
+        		}
+        
+        		private static class Proxy implements com.cutecomm.cloudcc.service.remotecontrol.IRemoteControlService {
+        			private android.os.IBinder mRemote;
+        
+        			Proxy(android.os.IBinder remote) {
+        				mRemote = remote;
+        			}
+        
+        			@Override
+        			public android.os.IBinder asBinder() {
+        				return mRemote;
+        			}
+        
+        			public java.lang.String getInterfaceDescriptor() {
+        				return DESCRIPTOR;
+        			}
+        
+        			@Override
+        			public void startDesktopShared() throws android.os.RemoteException {
+        				android.os.Parcel _data = android.os.Parcel.obtain();
+        				android.os.Parcel _reply = android.os.Parcel.obtain();
+        				try {
+        					_data.writeInterfaceToken(DESCRIPTOR);
+        					mRemote.transact(Stub.TRANSACTION_startDesktopShared, _data, _reply, 0);
+        					_reply.readException();
+        				} finally {
+        					_reply.recycle();
+        					_data.recycle();
+        				}
+        			}
+            			
+        		}
+        
+        		static final int TRANSACTION_startDesktopShared = (android.os.IBinder.FIRST_CALL_TRANSACTION + 0);
+        		
+        	}
+        
+        	public void startDesktopShared() throws android.os.RemoteException;
+        }
+
+    ```  
+    代码结构是，一个自定义的接口，继承了android.os.IInterface； 内部有一个内部的抽象类Stub，Stub 集成了Binder 的抽象类，并实现了自定义接口。Stub 中有几个方法。Stub的构造中有一个 this.attachInterface(this, DESCRIPTOR); 来加载接口，这个方法返回的是定义的接口对象， 里卖弄有个判断，根据Binder 中的DESCRIPTOR（为当前Binder 的标识，即接口路径），判断是否存在这个对象（queryLocalInterface），如果本地没有还没有此标识，说明即使客户端，需要给其创建一个新的代理对象，用于数据操作；如果有说明是服务端已经创建了得对象；Stub中有个asBinder 用于返回当前的对象；
+    onTransact 用于处理来的信息，把数据反序列化。
+    
+    Stub 中有了内部类，这个就是用于客户端的，一个名为Proxy 的实现了接口的代理类。在实现的方法中，把传入的数据序列化，设置上接口的标识， 然后通过binder的transact方法， 把数据写出去。 假如有返回需要等待返回数据，
+    ```
+        //_reply 用于数据返回，_data 是传出的数据，要记得把资源回收，
+    	android.os.Parcel _data = android.os.Parcel.obtain();
+				android.os.Parcel _data = android.os.Parcel.obtain();
+				android.os.Parcel _reply = android.os.Parcel.obtain();
+				android.graphics.Bitmap _result;
+				try {
+					_data.writeInterfaceToken(DESCRIPTOR);
+					_data.writeInt(screenWidth);
+					_data.writeInt(screenHeight);
+					mRemote.transact(Stub.TRANSACTION_getScreenShot, _data, _reply, 0);
+					_reply.readException();
+					if ((0 != _reply.readInt())) {
+						_result = android.graphics.Bitmap.CREATOR.createFromParcel(_reply);
+					} else {
+						_result = null;
+					}
+				} finally {
+					_reply.recycle();
+					_data.recycle();
+				}
+				return _result;
+    ```
+## CrashHandler ##
+Android在API21以下（也就是Android5.0以下），crash后会直接退出应用；但是在API21以上（5.0以上系统），会遵循以下原则重启。
+- 包含service, 如果程序crash的时候，运行着service，那么系统会重新启动service 。 
+- 不包含service，只有一个Activity，那么系统不会重新启动该Activity 。 
+- 不包含service，但是当前栈中包含两个Activity, A–>B, 如果B crash，那么系统会重启A。 
+- 不包含service，但是当前栈中包含三个Activity, A–>B–>C, 如果C crash，那么系统会重启B，并且A仍然存在，即可以从重启的Back到A。
+
+CrashHandler implements UncaughtExceptionHandler ，实现public void uncaughtException(Thread thread, Throwable ex) 方法。主要在uncaughtException中处理崩溃后的逻
+
+
 ## 加密各种原理 ##
 ### 1.RSA ###
+768位无人破解， 1024 安全。 2048位及其安全。
+- 互质关系：
+>1. 任意两个质数构成互质关系，比如13和61。
+ 2. 一个数是质数，另一个数只要不是前者的倍数，两者就构成互质关系，比如3和10。
+ 3. 如果两个数之中，较大的那个数是质数，则两者构成互质关系，比如97和57。
+ 4. 1和任意一个自然数是都是互质关系，比如1和99。
+ 5. p是大于1的整数，则p和p-1构成互质关系，比如57和56。
+ 6. p是大于1的奇数，则p和p-2构成互质关系，比如17和15。
+- 欧拉函数
+  去除质数的被数，剩下的就是互质数了。
+  φ(n) = φ(p1p2) = φ(p1)φ(p2)
+  即积的欧拉函数等于各个因子的欧拉函数之积。比如，φ(56)=φ(8×7)=φ(8)×φ(7)=4×6=24。
+- 欧拉定理
+  欧拉定理表明，若n,a为正整数，且n,a互质，则:
+
+  ![](images/ola.png)
+- 模板元素
+  如果两个正整数a和n互质，那么一定可以找到整数b，使得 ab-1 被n整除，或者说ab被n除的余数是1。这时，b就叫做a的"模反元素"。
+
+- 原理理解
+    
+    首先两个不想等的质数p, q ，计算出乘机。乘机即为密钥的长度。根据欧拉函数，可以算出欧拉函数的值n,
+    然后从 1< e <φ(n)取出一个数字e，与φ(n)互质， 然后根据模板元素原理， e和φ(n) 找到一个d 然后让ed-1 可以等于kφ(n)。然后就可以求出 d和k， 然后 （n，e）为公钥， （n，d）为私钥。
+    
+    （1）ed≡1 (mod φ(n))。只有知道e和φ(n)，才能算出d。
+　　（2）φ(n)=(p-1)(q-1)。只有知道p和q，才能算出φ(n)。
+　　（3）n=pq。只有将n因数分解，才能算出p和q。
+
+    关键在于质数求得，但是大整数因式分解很难，所以RSA还是比较安全。 
+    
+    公钥加密 　me ≡ c (mod n)  m 必须小于n。
+    私钥解密   cd ≡ m (mod n)
+- 私钥证明
+```java
+私钥解密的证明
+
+最后，我们来证明，为什么用私钥解密，一定可以正确地得到m。也就是证明下面这个式子：
+
+　　cd ≡ m (mod n)
+
+因为，根据加密规则
+
+　　ｍe ≡ c (mod n)
+
+于是，c可以写成下面的形式：
+
+　　c = me - kn
+
+将c代入要我们要证明的那个解密规则：
+
+　　(me - kn)d ≡ m (mod n)
+
+它等同于求证
+
+　　med ≡ m (mod n)
+
+由于
+
+　　ed ≡ 1 (mod φ(n))
+
+所以
+
+　　ed = hφ(n)+1
+
+将ed代入：
+
+　　mhφ(n)+1 ≡ m (mod n)
+
+接下来，分成两种情况证明上面这个式子。
+
+（1）m与n互质。
+
+    根据欧拉定理，此时
+    
+    　　mφ(n) ≡ 1 (mod n)
+    
+    得到
+    
+    　　(mφ(n))h × m ≡ m (mod n)
+    
+    原式得到证明。
+    
+    （2）m与n不是互质关系。
+    
+    此时，由于n等于质数p和q的乘积，所以m必然等于kp或kq。
+    
+    以 m = kp为例，考虑到这时k与q必然互质，则根据欧拉定理，下面的式子成立：
+    
+    　　(kp)q-1 ≡ 1 (mod q)
+    
+    进一步得到
+    
+    　　[(kp)q-1]h(p-1) × kp ≡ kp (mod q)
+    
+    即
+    　　(kp)ed ≡ kp (mod q)
+    
+    将它改写成下面的等式
+    
+    　　(kp)ed = tq + kp
+    
+    这时t必然能被p整除，即 t=t'p
+    
+    　　(kp)ed = t'pq + kp
+    
+    因为 m=kp，n=pq，所以
+    
+    　　med ≡ m (mod n)
+    
+    原式得到证明。
+```
+
 ### 2.AES ###
+|AES	|密钥长度（32位比特字)	|分组长度(32位比特字)	|加密轮数
+|------|------|------|
+|AES-128|4|	4|	10|
+|AES-192	|6|	4|	12|
+|AES-256	|8|	4|	14|
+
+![](images/aes.png)
+
+4个字节为一列，8 * 4 = 32 个， 1例如轮询10此 128 为 可以4组，不够的补上 6组及
+
+加密轮数 加密轮数14*4+首轮之前加加一次密钥 128 是10组 44个密钥字。 192 是12 组 52个 256 是14组 64个密钥字。
+
+
 ### 3 BASE64###
 ### 4.MD5 ###
 
-
-## CrashHandler ##
-
+## 基本算法 ##
 
 ## 自定义控件 ##
 - 组合控件
 - 基于现有的控件修改
 - 自定义控件
     - paint 、canvas.drawAcr canvas.drawRect canvas.bitmap等待
-    - Duff
+    - paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+- 关于MeasureSpec：
+    - UPSPECIFIED :父容器对于子容器没有任何限制,子容器想要多大就多大.
+    - EXACTLY父容器已经为子容器设置了尺寸,子容器应当服从这些边界,不论子容器想要多大的空间.
+    - AT_MOST子容器可以是声明大小内的任意大小.  
+    
 
-## LMK ##
-Anroid基于进程中运行的组件及其状态规定了默认的五个回收优先级：
-- Empty process(空进程)
-- Background process(后台进程)
-- Service process(服务进程)
-- Visible process(可见进程)
-- Foreground process(前台进程)
 
-## 多进程开发 ##
 ## 线程开发 ##
 ### 6.线程优化 ###
-## 基本算法 ##
+
 ## Activity、Window、Windows、DecorView、 ViewRootImpl ##
 ## View 绘制流程 ##
 ##事件分发流程##
