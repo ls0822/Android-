@@ -2045,15 +2045,7 @@ CrashHandler implements UncaughtExceptionHandler ，实现public void uncaughtEx
     
 
 
-## 线程开发 ##
-### 6.线程优化 ###
 
-## Activity、Window、Windows、DecorView、 ViewRootImpl ##
-## View 绘制流程 ##
-##事件分发流程##
-### View，ViewGroup分发 ###
-## Activity 启动 ##
-## APP 安装 ##
 
 
 
